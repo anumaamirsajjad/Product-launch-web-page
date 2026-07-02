@@ -1,0 +1,38 @@
+Build a sleek, single-page product launch website for the Fujifilm X-T10 digital camera. 
+The design should be modern, immersive, and feature interactive 3D animations that allow the camera to be viewed from all angles.
+
+Sections:
+1. Hero Section:
+   - Fullscreen 3D model of the Fujifilm X-T10 camera.
+   - Interactive rotation: users can drag or scroll to rotate the camera 360° horizontally and vertically.
+   - Headline: "100 Million Pixel HD Real Shot."
+   - Subtext: "Dust Proof. Water Proof. Built for Adventure."
+   - Launch date displayed prominently: "20.04.2021."
+   - Call-to-action button: "Pre-Order Now."
+
+2. Features Section:
+   - As users scroll, the camera animates to highlight specific features (lens zoom, body durability, waterproof seals).
+   - Smooth transitions between angles when showcasing each feature.
+   - Text panels slide in with short descriptions.
+
+3. Animation Details:
+   - Camera spins slowly by default, pausing when hovered.
+   - Zoom-in animation on lens when feature is selected.
+   - Exploded view animation showing internal components (sensor, lens mount, battery).
+   - Dust and water particle effects subtly animated in background.
+
+4. Story Section:
+   - Timeline animation: "Concept → Design → Engineering → Launch."
+   - Each stage accompanied by animated camera angles and short text.
+
+5. Call-to-Action Section:
+   - Bold button: "Order Yours Today."
+   - Button pulses gently with hover glow effect.
+   - Contact info: website and phone number at bottom.
+
+Design Style:
+- Colors: dark background with neon accents (blue, silver, white).
+- Typography: bold sans-serif for headlines, clean sans-serif for body text.
+- Animations: smooth easing, lightweight WebGL/Three.js for 3D rendering.
+- Responsive: optimized for desktop and mobile.
+
