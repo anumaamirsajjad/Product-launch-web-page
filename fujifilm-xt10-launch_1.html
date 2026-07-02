@@ -440,30 +440,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, window.innerWidth/window.innerHeight, 0.1, 100);
-
-/* ---------- responsive hero framing ----------
-   The hero camera distance and the rig's sideways offset were tuned for a
-   wide desktop aspect ratio. On a narrow/portrait viewport the camera's
-   effective horizontal FOV shrinks, so that same offset can push the model
-   outside the visible frustum. These helpers keep it centered and in-frame
-   without touching the scroll-driven framing used later in #features. */
-const HERO_BASE_Z = 6.2;
-const HERO_TARGET_SIZE = 2.6; // matches targetSize used to normalize the model below
-function computeHeroCameraZ(){
-  const aspect = window.innerWidth / window.innerHeight;
-  const vFov = camera.fov * Math.PI / 180;
-  const halfV = Math.tan(vFov / 2);
-  const halfH = halfV * aspect;
-  const margin = 1.35; // breathing room around the model
-  const zForHeight = (HERO_TARGET_SIZE / 2 * margin) / halfV;
-  const zForWidth  = (HERO_TARGET_SIZE / 2 * margin) / halfH;
-  return Math.max(HERO_BASE_Z, zForHeight, zForWidth);
-}
-function computeHeroRigOffsetX(){
-  return window.innerWidth <= 720 ? 0 : 1.1;
-}
-
-camera.position.set(0, 0.25, computeHeroCameraZ());
+camera.position.set(0, 0.25, 6.2);
 
 /* lights */
 scene.add(new THREE.AmbientLight(0x33445a, 1.1));
@@ -479,7 +456,7 @@ scene.add(fillAmber);
 
 /* ---------- rig group (holds the loaded model) ---------- */
 const rig = new THREE.Group();
-rig.position.set(computeHeroRigOffsetX(), -0.1, 0);
+rig.position.set(1.1, -0.1, 0);
 scene.add(rig);
 
 /* named exploded-view parts, populated once the GLB loads */
@@ -753,8 +730,6 @@ window.addEventListener('resize', ()=>{
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  rig.position.x = computeHeroRigOffsetX();
-  if(heroActive()){ camera.position.z = computeHeroCameraZ(); }
 });
 
 /* HUD shutter readout flicker */
