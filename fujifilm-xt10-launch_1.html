@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fujifilm X-T10 — 100 Million Pixel HD Real Shot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#05070a;
+    --panel:#0c131c;
+    --panel-2:#101a26;
+    --line:rgba(148,178,204,0.14);
+    --blue:#4fd8ff;
+    --blue-dim:rgba(79,216,255,0.35);
+    --amber:#ff8a3d;
+    --silver:#c7d2dc;
+    --white:#f5f8fb;
+    --muted:#7c8ba0;
+    --display:'Space Grotesk', sans-serif;
+    --body:'Inter', sans-serif;
+    --mono:'JetBrains Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--void);
+    color:var(--white);
+    font-family:var(--body);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+  }
+
+  /* ---------- fixed 3D stage ---------- */
+  #canvas-stage{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    transition:opacity .6s ease;
+  }
+  #canvas-stage canvas{display:block;width:100%;height:100%;}
+
+  .bg-vignette{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(5,7,10,0) 0%, rgba(5,7,10,0.55) 65%, rgba(5,7,10,0.92) 100%);
+  }
+  .bg-grid{
+    position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.25;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse at center, black 0%, transparent 75%);
+  }
+
+  /* ---------- nav ---------- */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 5vw;
+    mix-blend-mode:normal;
+  }
+  .nav-mark{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.14em;
+    color:var(--silver); display:flex; align-items:center; gap:8px;
+  }
+  .nav-mark span{color:var(--blue);}
+  .nav-links{display:flex; gap:32px; list-style:none;}
+  .nav-links a{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.12em;
+    color:var(--muted); text-decoration:none; text-transform:uppercase;
+    transition:color .3s ease;
+    position:relative;
+  }
+  .nav-links a:hover, .nav-links a:focus-visible{color:var(--white);}
+  .nav-links a::after{
+    content:''; position:absolute; left:0; bottom:-6px; width:0; height:1px;
+    background:var(--blue); transition:width .3s ease;
+  }
+  .nav-links a:hover::after{width:100%;}
+  @media (max-width:720px){ .nav-links{display:none;} }
+
+  /* ---------- HUD (viewfinder overlay) ---------- */
+  .hud{
+    position:fixed; inset:0; z-index:5; pointer-events:none;
+    transition:opacity .5s ease;
+  }
+  .hud .corner{
+    position:absolute; width:34px; height:34px; opacity:0.6;
+  }
+  .hud .corner::before, .hud .corner::after{content:'';position:absolute;background:var(--blue-dim);}
+  .hud .corner::before{width:100%;height:1px;top:0;}
+  .hud .corner::after{width:1px;height:100%;left:0;}
+  .hud .tl{top:100px;left:5vw;}
+  .hud .tr{top:100px;right:5vw;}
+  .hud .tr::before{}
+  .hud .bl{bottom:110px;left:5vw;}
+  .hud .br{bottom:110px;right:5vw;}
+  .hud .tl::before{top:0;} .hud .tl::after{left:0;}
+  .hud .tr::before{top:0;} .hud .tr::after{right:0;left:auto;}
+  .hud .bl::before{bottom:0;top:auto;} .hud .bl::after{left:0;}
+  .hud .br::before{bottom:0;top:auto;} .hud .br::after{right:0;left:auto;}
+  .hud-readout{
+    position:absolute; font-family:var(--mono); font-size:11px; letter-spacing:0.08em;
+    color:var(--blue); opacity:0.7;
+  }
+  .hud-readout.r1{top:112px; left:calc(5vw + 44px);}
+  .hud-readout.r2{top:112px; right:calc(5vw + 44px); text-align:right;}
+  .hud-readout.r3{bottom:118px; left:calc(5vw + 44px); color:var(--amber);}
+  .hud-readout.r4{bottom:118px; right:calc(5vw + 44px); text-align:right; color:var(--silver);}
+
+  /* ---------- sections shell ---------- */
+  main{position:relative; z-index:10;}
+  section{position:relative; width:100%;}
+
+  /* ---------- hero ---------- */
+  #hero{
+    min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+    padding:0 5vw;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--amber); margin-bottom:22px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:22px; height:1px; background:var(--amber);}
+  h1.headline{
+    font-family:var(--display); font-weight:700;
+    font-size:clamp(2.6rem, 7vw, 6.4rem);
+    line-height:0.98; letter-spacing:-0.02em;
+    max-width:14ch;
+    color:var(--white);
+  }
+  h1.headline em{
+    font-style:normal; color:var(--blue);
+    text-shadow:0 0 30px rgba(79,216,255,0.45);
+  }
+  .subtext{
+    margin-top:26px; font-size:clamp(1rem,1.6vw,1.25rem); color:var(--silver);
+    max-width:36ch; font-weight:400; line-height:1.5;
+  }
+  .hero-meta{
+    display:flex; align-items:center; gap:28px; margin-top:44px; flex-wrap:wrap;
+  }
+  .launch-badge{
+    font-family:var(--mono); font-size:13px; letter-spacing:0.1em; color:var(--muted);
+    border:1px solid var(--line); padding:10px 16px; border-radius:2px;
+  }
+  .launch-badge b{color:var(--white); font-weight:500;}
+  .btn{
+    font-family:var(--display); font-weight:600; font-size:15px; letter-spacing:0.02em;
+    color:var(--void); background:var(--blue); border:none; padding:16px 34px;
+    border-radius:2px; cursor:pointer; text-decoration:none; display:inline-block;
+    box-shadow:0 0 0 0 rgba(79,216,255,0.5);
+    transition:transform .25s ease, box-shadow .4s ease, background .3s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); box-shadow:0 8px 30px rgba(79,216,255,0.35); }
+  .scroll-hint{
+    position:absolute; bottom:40px; left:5vw;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.14em; color:var(--muted);
+    display:flex; align-items:center; gap:10px; text-transform:uppercase;
+  }
+  .scroll-hint .dot{width:6px;height:6px;border-radius:50%;background:var(--blue); animation:pulse-dot 1.8s ease-in-out infinite;}
+  @keyframes pulse-dot{0%,100%{opacity:0.3;} 50%{opacity:1;}}
+
+  /* ---------- features (scrollytelling) ---------- */
+  #features{ height:340vh; }
+  .feat-viewport{
+    position:sticky; top:0; height:100vh; display:flex; align-items:center;
+    padding:0 5vw;
+  }
+  .feat-panels{ width:min(460px, 90vw); }
+  .feat-panel{
+    position:absolute; opacity:0; transform:translateY(24px);
+    transition:opacity .5s ease, transform .6s ease;
+    pointer-events:none;
+  }
+  .feat-panel.active{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .feat-index{
+    font-family:var(--mono); font-size:12px; color:var(--blue); letter-spacing:0.15em;
+    margin-bottom:16px; display:block;
+  }
+  .feat-panel h3{
+    font-family:var(--display); font-size:clamp(1.7rem,3vw,2.6rem); font-weight:600;
+    color:var(--white); margin-bottom:16px; letter-spacing:-0.01em;
+  }
+  .feat-panel p{ color:var(--silver); font-size:1.05rem; line-height:1.65; max-width:40ch; }
+  .feat-card{
+    background:rgba(12,19,28,0.55); backdrop-filter:blur(18px) saturate(140%);
+    border:1px solid var(--line); border-radius:6px; padding:36px 38px;
+  }
+  .feat-dots{
+    position:absolute; right:5vw; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .feat-dots .d{
+    width:8px; height:8px; border-radius:50%; border:1px solid var(--muted);
+    transition:all .3s ease;
+  }
+  .feat-dots .d.active{ background:var(--blue); border-color:var(--blue); box-shadow:0 0 12px rgba(79,216,255,0.7); transform:scale(1.3); }
+  @media (max-width:720px){ .feat-dots{display:none;} }
+
+  /* ---------- exploded ---------- */
+  #exploded{ height:220vh; }
+  .exp-viewport{
+    position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; text-align:center;
+  }
+  .exp-heading{ position:absolute; top:14vh; }
+  .exp-heading .eyebrow{ justify-content:center; }
+  .exp-heading .eyebrow::before{ display:none; }
+  .exp-heading h2{
+    font-family:var(--display); font-size:clamp(1.8rem,3.4vw,2.8rem); font-weight:600;
+  }
+  .exp-labels{ position:absolute; inset:0; pointer-events:none; }
+  .exp-label{
+    position:absolute; opacity:0; transition:opacity .5s ease, transform .5s ease;
+    transform:translateY(8px);
+    font-family:var(--mono); font-size:12px; color:var(--blue-dim);
+    text-align:left;
+  }
+  .exp-label.active{ opacity:1; transform:translateY(0); }
+  .exp-label b{ display:block; font-family:var(--display); font-size:15px; color:var(--white); font-weight:600; margin-bottom:2px; }
+  .exp-label i{ font-style:normal; color:var(--blue); }
+  .exp-label::before{ content:''; position:absolute; left:-16px; top:6px; width:10px; height:1px; background:var(--blue-dim); }
+
+  /* ---------- story ---------- */
+  #story{ padding:16vh 5vw 20vh; background:linear-gradient(180deg, transparent, var(--void) 30%); }
+  .section-head{ text-align:center; margin-bottom:10vh; }
+  .section-head h2{ font-family:var(--display); font-size:clamp(2rem,4vw,3.2rem); font-weight:600; }
+  .timeline{
+    max-width:920px; margin:0 auto; position:relative;
+    border-left:1px solid var(--line); padding-left:48px;
+  }
+  .stage{
+    position:relative; padding-bottom:80px; opacity:0; transform:translateX(24px);
+    transition:opacity .7s ease, transform .7s ease;
+  }
+  .stage.visible{ opacity:1; transform:translateX(0); }
+  .stage:last-child{ padding-bottom:0; }
+  .stage::before{
+    content:''; position:absolute; left:-53px; top:4px; width:10px; height:10px;
+    border-radius:50%; background:var(--void); border:2px solid var(--blue);
+  }
+  .stage.visible::before{ box-shadow:0 0 14px rgba(79,216,255,0.7); }
+  .stage-label{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.16em; color:var(--amber);
+    text-transform:uppercase; margin-bottom:8px; display:block;
+  }
+  .stage h3{ font-family:var(--display); font-size:1.9rem; font-weight:600; margin-bottom:10px; }
+  .stage p{ color:var(--silver); max-width:58ch; line-height:1.65; }
+
+  /* ---------- cta ---------- */
+  #cta{
+    background:var(--panel); border-top:1px solid var(--line);
+    padding:18vh 5vw 8vh; text-align:center;
+  }
+  #cta h2{
+    font-family:var(--display); font-weight:700; font-size:clamp(2.2rem,5vw,4rem);
+    letter-spacing:-0.02em; margin-bottom:20px;
+  }
+  #cta .subtext{ margin:0 auto 48px; text-align:center; }
+  .btn-pulse{
+    position:relative; font-family:var(--display); font-weight:600; font-size:16px;
+    color:var(--void); background:var(--blue); border:none; padding:20px 46px;
+    border-radius:2px; cursor:pointer; letter-spacing:0.01em;
+  }
+  .btn-pulse::after{
+    content:''; position:absolute; inset:0; border-radius:2px; background:var(--blue);
+    z-index:-1; animation:pulse-ring 2.4s ease-out infinite;
+  }
+  @keyframes pulse-ring{
+    0%{ box-shadow:0 0 0 0 rgba(79,216,255,0.55); }
+    100%{ box-shadow:0 0 0 26px rgba(79,216,255,0); }
+  }
+  .btn-pulse:hover{ box-shadow:0 10px 40px rgba(79,216,255,0.45); }
+  .contact-row{
+    margin-top:70px; display:flex; justify-content:center; gap:48px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:13px; color:var(--muted); letter-spacing:0.04em;
+  }
+  .contact-row a{ color:var(--silver); text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:2px; }
+  .contact-row a:hover{ color:var(--blue); border-color:var(--blue); }
+  footer{
+    text-align:center; padding:32px 5vw; font-family:var(--mono); font-size:11px;
+    color:var(--muted); letter-spacing:0.1em; background:var(--panel);
+  }
+
+  ::selection{ background:var(--blue); color:var(--void); }
+</style>
+</head>
+<body>
+
+<div id="canvas-stage"><canvas id="gl"></canvas></div>
+<div id="model-loading" style="position:fixed;bottom:36px;left:50%;transform:translateX(-50%);z-index:30;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;color:#7c8ba0;text-transform:uppercase;transition:opacity .4s ease;">Loading model…</div>
+<div class="bg-grid"></div>
+<div class="bg-vignette"></div>
+
+<div class="hud" id="hud">
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+  <div class="hud-readout r1">ISO&nbsp;200</div>
+  <div class="hud-readout r2">F2.8</div>
+  <div class="hud-readout r3" id="hud-shutter">1/125s</div>
+  <div class="hud-readout r4">AWB · 87%</div>
+</div>
+
+<nav>
+  <div class="nav-mark">FUJIFILM <span>X-T10</span></div>
+  <ul class="nav-links">
+    <li><a href="#hero">Overview</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#exploded">Inside</a></li>
+    <li><a href="#story">Story</a></li>
+    <li><a href="#cta">Order</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <section id="hero">
+    <div class="eyebrow">Digital Mirrorless · Est. 2021</div>
+    <h1 class="headline">100 Million Pixel <em>HD Real Shot.</em></h1>
+    <p class="subtext">Dust Proof. Water Proof. Built for Adventure.</p>
+    <div class="hero-meta">
+      <div class="launch-badge">LAUNCH — <b>20.04.2021</b></div>
+      <a href="#cta" class="btn">Pre-Order Now</a>
+    </div>
+    <div class="scroll-hint"><span class="dot"></span>Drag to rotate — scroll to explore</div>
+  </section>
+
+  <section id="features">
+    <div class="feat-viewport">
+      <div class="feat-panels">
+        <div class="feat-panel active" data-i="0">
+          <div class="feat-card">
+            <span class="feat-index">01 / LENS</span>
+            <h3>Precision Zoom Optics</h3>
+            <p>Sixteen elements glide into focus in a fraction of a second, holding sharp detail from the center of the frame to the very edge.</p>
+          </div>
+        </div>
+        <div class="feat-panel" data-i="1">
+          <div class="feat-card">
+            <span class="feat-index">02 / BODY</span>
+            <h3>Magnesium-Alloy Shell</h3>
+            <p>A die-cast chassis absorbs drops and knocks that would dent lesser cameras, without adding weight to your bag.</p>
+          </div>
+        </div>
+        <div class="feat-panel" data-i="2">
+          <div class="feat-card">
+            <span class="feat-index">03 / SEALS</span>
+            <h3>Sealed Against the Elements</h3>
+            <p>Rubber gaskets ring every dial and door, keeping dust and rain out of dozens of points across the body.</p>
+          </div>
+        </div>
+      </div>
+      <div class="feat-dots">
+        <div class="d active"></div><div class="d"></div><div class="d"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="exploded">
+    <div class="exp-viewport">
+      <div class="exp-heading">
+        <div class="eyebrow">What's Inside</div>
+        <h2>Every Part, Purposeful.</h2>
+      </div>
+      <div class="exp-labels">
+        <div class="exp-label" id="lbl-battery" style="top:66%; left:60%;"><b>Battery Check</b><i>tests cell charge</i></div>
+        <div class="exp-label" id="lbl-spool" style="top:30%; left:24%;"><b>Film Spool</b><i>take-up spindle</i></div>
+        <div class="exp-label" id="lbl-advance" style="top:26%; left:64%;"><b>Film Advance</b><i>winds to the next frame</i></div>
+        <div class="exp-label" id="lbl-shutter" style="top:52%; left:66%;"><b>Shutter Button</b><i>fires the exposure</i></div>
+        <div class="exp-label" id="lbl-dial" style="top:40%; left:20%;"><b>Shutter Speed Dial</b><i>1s – 1/1000s</i></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="story">
+    <div class="section-head">
+      <div class="eyebrow" style="justify-content:center;">The Journey</div>
+      <h2>Concept to Launch.</h2>
+    </div>
+    <div class="timeline">
+      <div class="stage" data-stage="0">
+        <span class="stage-label">Concept · 2018</span>
+        <h3>An Idea Worth Carrying</h3>
+        <p>Sketched in a notebook: a camera small enough to disappear in your hand, honest enough to trust in the field.</p>
+      </div>
+      <div class="stage" data-stage="1">
+        <span class="stage-label">Design · 2019</span>
+        <h3>Dials Over Menus</h3>
+        <p>Every control finds itself under a fingertip before you've thought to look for it — ISO, shutter, and exposure, all in reach.</p>
+      </div>
+      <div class="stage" data-stage="2">
+        <span class="stage-label">Engineering · 2020</span>
+        <h3>Two Hundred Prototypes</h3>
+        <p>The shell survives a two-meter drop and a monsoon without missing a shot, tested until it stopped failing.</p>
+      </div>
+      <div class="stage" data-stage="3">
+        <span class="stage-label">Launch · 20.04.2021</span>
+        <h3>Ready for Anywhere</h3>
+        <p>The X-T10 ships to shelves worldwide — dust proof, water proof, and built for whatever you point it at.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="cta">
+    <div class="eyebrow" style="justify-content:center;">Available Now</div>
+    <h2>Take It Anywhere.</h2>
+    <p class="subtext">One hundred million pixels of real-shot detail, sealed against dust and rain. Reserve yours before the first shipment sells out.</p>
+    <button class="btn-pulse" onclick="window.location.href='#hero'">Order Yours Today</button>
+    <div class="contact-row">
+      <a href="#">fujifilm-xt10.com</a>
+      <a href="tel:+18005550199">+1 (800) 555-0199</a>
+    </div>
+  </section>
+
+  <footer>© 2021 FUJIFILM · X-T10 CONCEPT SITE — BUILT FOR ADVENTURE</footer>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ====================== THREE.JS SCENE ====================== */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.25, 6.2);
+
+/* lights */
+scene.add(new THREE.AmbientLight(0x33445a, 1.1));
+const key = new THREE.DirectionalLight(0xffffff, 1.4);
+key.position.set(4, 5, 6);
+scene.add(key);
+const rim = new THREE.PointLight(0x4fd8ff, 3.2, 20);
+rim.position.set(-4, 1.5, -3);
+scene.add(rim);
+const fillAmber = new THREE.PointLight(0xff8a3d, 1.4, 14);
+fillAmber.position.set(2, -2, 3);
+scene.add(fillAmber);
+
+/* ---------- rig group (holds the loaded model) ---------- */
+const rig = new THREE.Group();
+rig.position.set(1.1, -0.1, 0);
+scene.add(rig);
+
+/* named exploded-view parts, populated once the GLB loads */
+const explodeParts = {}; // { battery, spool, advance, shutter, dial }
+let sharedMaterial = null;
+let modelReady = false;
+
+/* rim accent lights that key off the loaded shell (kept subtle since the
+   model carries its own baked textures/materials) */
+
+/* ---------- load the real camera model ---------- */
+const loadingEl = document.getElementById('model-loading');
+const gltfLoader = new THREE.GLTFLoader();
+gltfLoader.load(
+  './canon_at-1_retro_camera.glb',
+  (gltf)=>{
+    const model = gltf.scene;
+
+    /* center + normalize scale so it frames the same way the rest of the
+       scene (camera dolly, particle field, HUD) was designed around */
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const center = new THREE.Vector3(); box.getCenter(center);
+    model.position.sub(center);
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const targetSize = 2.6;
+    const scale = targetSize / maxDim;
+    const wrapper = new THREE.Group();
+    wrapper.add(model);
+    wrapper.scale.setScalar(scale);
+    rig.add(wrapper);
+
+    /* collect the shared material for the story dematerialize effect,
+       and tag every mesh so it casts a bit more definition under the rim light */
+    model.traverse((child)=>{
+      if(child.isMesh){
+        child.material.transparent = true;
+        child.material.opacity = 1;
+        child.material.envMapIntensity = 1.1;
+        sharedMaterial = child.material;
+      }
+    });
+
+    /* real named parts from the GLB — used to drive the exploded view */
+    explodeParts.battery = model.getObjectByName('#CAM0001_Battery_Check');
+    explodeParts.spool   = model.getObjectByName('#CAM0001_Spool');
+    explodeParts.advance = model.getObjectByName('#CAM0001_Film_Advance');
+    explodeParts.shutter = model.getObjectByName('#CAM0001_Shutter');
+    explodeParts.dial    = model.getObjectByName('#CAM0001_Shutter_Speed');
+    Object.values(explodeParts).forEach(p=>{ if(p) p.userData.restPos = p.position.clone(); });
+
+    modelReady = true;
+    if(loadingEl){ loadingEl.style.opacity = 0; setTimeout(()=> loadingEl.remove(), 600); }
+  },
+  undefined,
+  (err)=>{
+    console.error('Model failed to load', err);
+    if(loadingEl){ loadingEl.textContent = 'Model failed to load — check the file is next to the HTML file.'; }
+  }
+);
+
+/* ---------- ambient dust / water particles ---------- */
+const particleCount = 180;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(particleCount*3);
+for(let i=0;i<particleCount;i++){
+  pPos[i*3]   = (Math.random()-0.5) * 9;
+  pPos[i*3+1] = (Math.random()-0.5) * 6;
+  pPos[i*3+2] = (Math.random()-0.5) * 6;
+}
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+const pMat = new THREE.PointsMaterial({ color:0x4fd8ff, size:0.02, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false });
+const particles = new THREE.Points(pGeo, pMat);
+scene.add(particles);
+
+/* ====================== INTERACTION ====================== */
+let heroHeight = document.getElementById('hero').offsetHeight;
+window.addEventListener('resize', ()=>{ heroHeight = document.getElementById('hero').offsetHeight; });
+
+let isDragging = false, isHovering = false;
+let lastX = 0, lastY = 0;
+let dragYaw = 0.35, dragPitch = 0;
+let targetYaw = 0.35, targetPitch = 0;
+let autoRotate = 0;
+
+function heroActive(){ return window.scrollY < heroHeight - 40; }
+
+canvas.addEventListener('pointerdown', (e)=>{
+  if(!heroActive()) return;
+  isDragging = true; lastX = e.clientX; lastY = e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', (e)=>{
+  if(isDragging){
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    targetYaw += dx * 0.006;
+    targetPitch += dy * 0.005;
+    targetPitch = Math.max(-0.7, Math.min(0.7, targetPitch));
+  }
+});
+window.addEventListener('pointerup', ()=>{ isDragging = false; });
+canvas.addEventListener('pointerenter', ()=>{ isHovering = true; });
+canvas.addEventListener('pointerleave', ()=>{ isHovering = false; });
+canvas.addEventListener('wheel', (e)=>{
+  if(!heroActive()) return;
+  targetYaw += e.deltaX * 0.0009;
+}, { passive:true });
+
+/* ====================== SCROLL-DRIVEN ANIMATION ====================== */
+const featureAngles = [0.35, 1.55, -1.1];
+const featureDolly   = [6.2, 5.2, 5.6];
+let featureBlend = 0;      // 0 = off (hero), 1 = fully driven by features scroll
+let featureYaw = featureAngles[0];
+let explodeProgress = 0;
+let storyOpacity = 1;      // 0 = wireframe-only (concept), 1 = full solid (launch)
+let canvasOpacity = 1;
+
+/* features section */
+ScrollTrigger.create({
+  trigger:'#features',
+  start:'top top',
+  end:'bottom bottom',
+  scrub:true,
+  onUpdate:(self)=>{
+    const p = self.progress;
+    const stops = featureAngles.length;
+    const scaled = p * (stops-1);
+    let idx = Math.floor(scaled);
+    if(idx > stops-2) idx = stops-2;
+    const t = scaled - idx;
+    featureYaw = THREE.MathUtils.lerp(featureAngles[idx], featureAngles[idx+1], t);
+    camera.position.z = THREE.MathUtils.lerp(featureDolly[idx], featureDolly[idx+1], t);
+
+    const activeIdx = Math.min(stops-1, Math.round(scaled));
+    document.querySelectorAll('.feat-panel').forEach((el,i)=> el.classList.toggle('active', i===activeIdx));
+    document.querySelectorAll('.feat-dots .d').forEach((el,i)=> el.classList.toggle('active', i===activeIdx));
+  },
+  onEnter:()=>{ featureBlend = 1; },
+  onEnterBack:()=>{ featureBlend = 1; },
+  onLeaveBack:()=>{ featureBlend = 0; },
+  onLeave:()=>{ /* keep last framing while in exploded section */ }
+});
+
+/* exploded section */
+const explodeLabels = ['lbl-spool','lbl-dial','lbl-advance','lbl-shutter','lbl-battery'];
+ScrollTrigger.create({
+  trigger:'#exploded',
+  start:'top top',
+  end:'bottom bottom',
+  scrub:true,
+  onUpdate:(self)=>{
+    explodeProgress = self.progress;
+    explodeLabels.forEach((id, i)=>{
+      const el = document.getElementById(id);
+      const thresh = 0.08 + i*0.15;
+      el.classList.toggle('active', explodeProgress > thresh);
+    });
+  }
+});
+
+/* story section — camera dematerializes from wireframe to full solid */
+ScrollTrigger.create({
+  trigger:'#story',
+  start:'top 70%',
+  end:'bottom 60%',
+  scrub:true,
+  onUpdate:(self)=>{ storyOpacity = self.progress; }
+});
+
+document.querySelectorAll('.stage').forEach((el)=>{
+  ScrollTrigger.create({
+    trigger:el,
+    start:'top 78%',
+    onEnter:()=> el.classList.add('visible'),
+    onLeaveBack:()=> el.classList.remove('visible')
+  });
+});
+
+/* fade the 3D stage + HUD out before CTA */
+ScrollTrigger.create({
+  trigger:'#cta',
+  start:'top 85%',
+  end:'top 35%',
+  scrub:true,
+  onUpdate:(self)=>{ canvasOpacity = 1 - self.progress; }
+});
+
+/* HUD visibility tied to hero */
+ScrollTrigger.create({
+  trigger:'#features',
+  start:'top 90%',
+  end:'top 20%',
+  scrub:true,
+  onUpdate:(self)=>{ document.getElementById('hud').style.opacity = 1 - self.progress; }
+});
+
+/* ====================== RENDER LOOP ====================== */
+const clock = new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  /* smooth manual drag */
+  dragYaw = THREE.MathUtils.lerp(dragYaw, targetYaw, 0.08);
+  dragPitch = THREE.MathUtils.lerp(dragPitch, targetPitch, 0.08);
+
+  if(heroActive()){
+    if(!isDragging && !isHovering){ targetYaw += dt * 0.18; }
+    rig.rotation.y = dragYaw;
+    rig.rotation.x = dragPitch;
+  } else {
+    /* blend toward scroll-driven yaw once past hero */
+    rig.rotation.y = THREE.MathUtils.lerp(rig.rotation.y, featureYaw, 0.06);
+    rig.rotation.x = THREE.MathUtils.lerp(rig.rotation.x, 0, 0.06);
+  }
+
+  /* exploded view offsets — pull the real named parts apart along distinct axes */
+  const ep = explodeProgress;
+  if(modelReady){
+    const offsets = {
+      battery: new THREE.Vector3(0.5, -0.15, 0.05),
+      spool:   new THREE.Vector3(-0.1, 0.55, 0.1),
+      advance: new THREE.Vector3(0.15, 0.5, -0.35),
+      shutter: new THREE.Vector3(0.35, 0.3, 0.3),
+      dial:    new THREE.Vector3(-0.35, 0.45, 0.15)
+    };
+    Object.keys(offsets).forEach((key)=>{
+      const part = explodeParts[key];
+      if(!part || !part.userData.restPos) return;
+      part.position.copy(part.userData.restPos).addScaledVector(offsets[key], ep);
+    });
+  }
+
+  /* story dematerialize */
+  applyStoryOpacity();
+
+  /* canvas fade */
+  document.getElementById('canvas-stage').style.opacity = canvasOpacity;
+
+  /* particle drift */
+  const pos = pGeo.attributes.position;
+  for(let i=0;i<particleCount;i++){
+    pos.array[i*3+1] += Math.sin(clock.elapsedTime*0.3 + i) * 0.0008;
+    pos.array[i*3] += Math.cos(clock.elapsedTime*0.2 + i) * 0.0004;
+  }
+  pos.needsUpdate = true;
+  particles.rotation.y += dt * 0.01;
+
+  renderer.render(scene, camera);
+}
+
+/* story opacity is only meaningfully applied while story section is in play;
+   before it, keep materials fully solid; guard against flashing on load */
+let storySectionSeen = false;
+ScrollTrigger.create({
+  trigger:'#story', start:'top bottom', end:'bottom top',
+  onToggle:(self)=>{ storySectionSeen = self.isActive || window.scrollY > (document.getElementById('story').offsetTop); }
+});
+function solidSectionActive(){ return storySectionSeen; }
+function applyStoryOpacity(){
+  if(!sharedMaterial) return;
+  const target = storySectionSeen ? THREE.MathUtils.clamp(storyOpacity,0,1) : 1;
+  sharedMaterial.opacity = 0.15 + target * 0.85;
+}
+
+animate();
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* HUD shutter readout flicker */
+const shutterVals = ['1/125s','1/250s','1/90s','1/180s'];
+setInterval(()=>{
+  document.getElementById('hud-shutter').textContent = shutterVals[Math.floor(Math.random()*shutterVals.length)];
+}, 2600);
+
+/* smooth in-page nav */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click', (e)=>{
+    const target = document.querySelector(a.getAttribute('href'));
+    if(target){ e.preventDefault(); target.scrollIntoView({behavior:'smooth'}); }
+  });
+});
+</script>
+</body>
+</html>
